@@ -1,0 +1,340 @@
+from datetime import datetime, timedelta
+
+class Setting:
+    def __init__(self):
+        self.settings = {}
+
+    def update(self, key, value):
+        self.settings[key] = value
+
+    def get_all(self):
+        return self.settings
+
+
+class Employee:
+    def __init__(self, name, position, salary):
+        self.name = name
+        self.position = position
+        self.salary = salary
+
+
+class Drug:
+    def __init__(self, name, price, quantity, expiration_date):
+        self.name = name
+        self.price = price
+        self.quantity = quantity
+        self.expiration_date = expiration_date
+
+    def update(self, price=None, quantity=None, expiration_date=None):
+        if price is not None:
+            self.price = price
+        if quantity is not None:
+            self.quantity = quantity
+        if expiration_date is not None:
+            self.expiration_date = expiration_date
+
+    def is_expired(self):
+        today = datetime.now()
+        expiry_date = datetime.strptime(self.expiration_date, '%Y-%m-%d')
+        return expiry_date < today
+
+    def is_nearing_expiry(self, days=30):
+        today = datetime.now()
+        expiry_date = datetime.strptime(self.expiration_date, '%Y-%m-%d')
+        nearing_expiry_threshold = today + timedelta(days=days)
+        return today <= expiry_date <= nearing_expiry_threshold
+
+
+class Sale:
+    def __init__(self, drug_name, quantity, total_cost):
+        self.drug_name = drug_name
+        self.quantity = quantity
+        self.total_cost = total_cost
+        self.sale_date = datetime.now().strftime('%Y-%m-%d')
+
+
+class Pharmacy:
+    def __init__(self):
+        self.setting = Setting()
+        self.employees = []
+        self.inventory = []
+        self.sales = []
+
+    def update_setting(self, key, value):
+        self.setting.update(key, value)
+
+    # def get_setting(self, key):
+    #     return self.setting.get(key)
+
+    def get_all_settings(self):
+        return self.setting.get_all()
+
+    def add_employee(self, name, position, salary):
+        for emp in self.employees:
+            if emp.name == name:
+                return "Employee already exists"
+                self.employees.append(Employee(name, position, salary))
+                return "Success"
+
+    def remove_employee(self, name):
+        initial_length = len(self.employees)
+        self.employees = [emp for emp in self.employees if emp.name != name]
+        return "Success" if len(self.employees) < initial_length else "Failure"
+
+    def update_employee_info(self, name, position=None, salary=None):
+        for emp in self.employees:
+            if emp.name == name:
+                if position is not None:
+                    emp.position = position
+                if salary is not None:
+                    emp.salary = salary
+                return "Success"
+        return "Failure"
+
+    def calculate_employee_salary(self, name, hours_worked):
+        for emp in self.employees:
+            if emp.name == name:
+                hourly_rate = emp.salary / 160
+                total_salary = hourly_rate * hours_worked
+                return "Success", total_salary
+        return "Failure", 0
+
+    def add_drug(self, name, price, quantity, expiration_date):
+        if any(drug.name == name for drug in self.inventory):
+            return "Drug already exists"
+        self.inventory.append(Drug(name, price, quantity, expiration_date))
+        return "Success"
+
+    def remove_drug(self, name):
+        initial_length = len(self.inventory)
+        self.inventory = [drug for drug in self.inventory if drug.name != name]
+        return "Success" if len(self.inventory) < initial_length else "Failure"
+
+    def update_drug_info(self, name, price=None, quantity=None, expiration_date=None):
+        for drug in self.inventory:
+            if drug.name == name:
+                drug.update(price, quantity, expiration_date)
+                return "Success"
+        return "Failure"
+
+    def sell_drug(self, name, quantity_sold):
+        for drug in self.inventory:
+            if drug.name == name:
+                if drug.quantity >= quantity_sold:
+                    total_cost = drug.price * quantity_sold
+                    drug.quantity -= quantity_sold
+                    self.sales.append(Sale(name, quantity_sold, total_cost))
+                    return "Success", total_cost
+                else:
+                    return "Failure", 0
+        return "Failure", 0
+
+    def generate_sales_report(self, start_date, end_date):
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        report = [sale for sale in self.sales if start_date <= datetime.strptime(sale.sale_date, '%Y-%m-%d') <= end_date]
+        return report
+
+    def check_drug_expiry(self):
+        expired_drugs = [drug for drug in self.inventory if drug.is_expired()]
+        nearing_expiry_drugs = [drug for drug in self.inventory if drug.is_nearing_expiry()]
+        return expired_drugs, nearing_expiry_drugs
+
+    def search_drug_by_name(self, name):
+        matching_drugs = [drug for drug in self.inventory if name.lower() in drug.name.lower()]
+        return matching_drugs
+
+    def view_all_employees(self):
+        if self.employees:
+            print("Employee List:")
+            for emp in self.employees:
+                print(f"Name: {emp.name}, Position: {emp.position}, Salary: {emp.salary}")
+        else:
+            print("No employees found.")
+
+    def main(self):
+        print("Welcome to Rawan's Pharmacy")
+        while True:
+            try:
+                print("1. Update Setting")
+                print("2. Add Employee")
+                print("3. Remove Employee")
+                print("4. Update Employee Info")
+                print("5. Calculate Employee Salary")
+                print("6. Add Drug")
+                print("7. Remove Drug")
+                print("8. Update Drug Info")
+                print("9. Sell Drug")
+                print("10. Generate Sales Report")
+                print("11. View Inventory")
+                print("12. View Sales")
+                print("13. Check Drug Expiry")
+                print("14. Search Drug by Name")
+                print("15. View All Settings")
+                print("16. View All Employees") 
+                print("17. Exit") 
+
+                choice = input("Enter your choice: ")
+
+                if choice == '1':
+                    key = input("Enter setting key: ")
+                    value = input("Enter setting value: ")
+                    self.update_setting(key, value)
+                    print("Setting updated.")
+                
+                elif choice == '2':
+                    name = input("Enter employee name: ")
+                    position = input("Enter employee position: ")
+                    salary = float(input("Enter employee salary: "))
+                    result = self.add_employee(name, position, salary)
+                    print(result)
+                
+                elif choice == '3':
+                    name = input("Enter employee name to remove: ")
+                    result = self.remove_employee(name)
+                    print(result)
+                
+                elif choice == '4':
+                    name = input("Enter employee name to update: ")
+                    position = input("Enter new position (you can press enter to remain same): ")
+                    salary = input("Enter new salary (you can press enter to remain same): ")
+                    result = self.update_employee_info(
+                        name, 
+                        position=position if position else None, 
+                        salary=float(salary) if salary else None
+                    )
+                    print(result)
+                
+                elif choice == '5':
+                    name = input("Enter employee name: ")
+                    hours_worked = float(input("Enter hours worked: "))
+                    result, total_salary = self.calculate_employee_salary(name, hours_worked)
+                    print(result, "Total salary:", total_salary)
+                
+                elif choice == '6':
+                    name = input("Enter drug name: ")
+                    price = float(input("Enter drug price: "))
+                    quantity = int(input("Enter drug quantity: "))
+                    while True:
+                        expiration_date = input("Enter expiration date (YYYY-MM-DD): ")
+                        try:
+                            datetime.strptime(expiration_date, '%Y-%m-%d')
+                            break
+                        except ValueError:
+                            print("Invalid date format. Please enter the date in YYYY-MM-DD format.")
+                    result = self.add_drug(name, price, quantity, expiration_date)
+                    print(result)
+                
+                elif choice == '7':
+                    name = input("Enter drug name to remove: ")
+                    result = self.remove_drug(name)
+                    print(result)
+                
+                elif choice == '8':
+                    name = input("Enter drug name to update: ")
+                    price = input("Enter new price (you can press enter to remain same): ")
+                    quantity = input("Enter new quantity (you can press enter to remain same): ")
+                    expiration_date = input("Enter new expiration date (you can press enter to remain same): ")
+                    result = self.update_drug_info(
+                        name, 
+                        price=float(price) if price else None, 
+                        quantity=int(quantity) if quantity else None, 
+                        expiration_date=expiration_date if expiration_date else None
+                    )
+                    print(result)
+                
+                elif choice == '9':
+                    name = input("Enter drug name to sell: ")
+                    quantity_sold = int(input("Enter quantity sold: "))
+                    result, total_cost = self.sell_drug(name, quantity_sold)
+                    print(result, "Total cost:", total_cost)
+                
+                elif choice == '10':
+                    while True:
+                        start_date = input("Enter start date (YYYY-MM-DD): ")
+                        try:
+                            datetime.strptime(start_date, '%Y-%m-%d')
+                            break
+                        except ValueError:
+                            print("Invalid date format. Please enter the date in YYYY-MM-DD format.")
+                    while True:
+                        end_date = input("Enter end date (YYYY-MM-DD): ")
+                        try:
+                            datetime.strptime(end_date, '%Y-%m-%d')
+                            break
+                        except ValueError:
+                            print("Invalid date format. Please enter the date in YYYY-MM-DD format.")
+                    report = self.generate_sales_report(start_date, end_date)
+                    if report:
+                        print("Sales Report:")
+                        for sale in report:
+                            print(sale.__dict__)
+                    else:
+                        print("No sales found in the given date range.")
+                
+                elif choice == '11':
+                    if self.inventory:
+                        print("Current Inventory:")
+                        for drug in self.inventory:
+                            print(drug.__dict__)
+                    else:
+                        print("No inventory found yet.")
+                
+                elif choice == '12':
+                    if self.sales:
+                        print("Sales Records:")
+                        for sale in self.sales:
+                            print(sale.__dict__)
+                    else:
+                        print("No sales records found yet.")
+                
+                elif choice == '13':
+                    expired, nearing_expiry = self.check_drug_expiry()
+                    if expired:
+                        print("Expired Drugs:")
+                        for drug in expired:
+                            print(drug.__dict__)
+                    else:
+                        print("No expired drugs found.")
+                    if nearing_expiry:
+                        print("Nearing Expiry Drugs:")
+                        for drug in nearing_expiry:
+                            print(drug.__dict__)
+                    else:
+                        print("No drugs nearing expiry found.")
+                
+                elif choice == '14':
+                    name = input("Enter drug name to search: ")
+                    matching_drugs = self.search_drug_by_name(name)
+                    if matching_drugs:
+                        print("Matching Drugs:")
+                        for drug in matching_drugs:
+                            print(drug.__dict__)
+                    else:
+                        print("No matching drugs found.")
+                
+                elif choice == '15':
+                    settings = self.get_all_settings()
+                    if settings:
+                        print("Current Settings:")
+                        for key, value in settings.items():
+                            print(f"{key}: {value}")
+                    else:
+                        print("No settings found yet.")
+
+                elif choice == '16':
+                    self.view_all_employees() 
+                elif choice == '17':
+                    break
+                
+                else:
+                    print("Invalid choice, please try again.")
+            
+            except ValueError as ve:
+                print(f"Input error: {ve}")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    pharmacy = Pharmacy()
+    pharmacy.main()
